@@ -19,12 +19,16 @@ return new class extends Migration {
             $table->timestamp('viewed_at');
             $table->timestamps();
 
-            $table->unique([
-                'post_id',
-                'user_id',
-                'viewed_at'
-            ]);
         });
+
+        DB::statement("
+                CREATE UNIQUE INDEX post_views_unique_day
+                ON post_views (
+                    post_id,
+                    user_id,
+                    (DATE(viewed_at))
+                )
+            ");
     }
 
     public function down(): void

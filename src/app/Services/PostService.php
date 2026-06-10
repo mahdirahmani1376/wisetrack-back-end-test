@@ -251,7 +251,7 @@ class PostService
         return [
             "total_posts_analyzed" => Post::count(),
             "period_days" => $periodDays,
-            "average_views_per_post" => $views->average('total_views'),
+            "average_views_per_post" => (int)$views->average('total_views'),
         ];
     }
 }

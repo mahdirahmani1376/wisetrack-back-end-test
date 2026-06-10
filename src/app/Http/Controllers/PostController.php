@@ -42,7 +42,8 @@ class PostController
             'ip_address' => $request->ip(),
             'user_agent' => $request->userAgent(),
             'user_id' => $request->user()?->id,
-            'post_id' => $post->id
+            'post_id' => $post->id,
+            'viewed_at' => now()
         ];
 
         $postViewService->create($data);
