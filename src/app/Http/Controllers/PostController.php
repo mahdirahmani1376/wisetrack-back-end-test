@@ -11,7 +11,6 @@ use App\Models\Post;
 use App\Services\PostService;
 use App\Services\PostViewService;
 use Illuminate\Http\Request;
-use Illuminate\Routing\Attributes\Controllers\Authorize;
 
 class PostController
 {
@@ -24,20 +23,20 @@ class PostController
         );
     }
 
-    public function store(StorePostRequest $request,PostService $postService)
+    public function store(StorePostRequest $request, PostService $postService)
     {
         $validatedData = $request->validated();
         $validatedData['image_file'] = $request->file('image');
         $validatedData['user_id'] = auth()->id();
 
         return response()->json(
-          PostResource::make(
-              $postService->store($validatedData)
-          )
+            PostResource::make(
+                $postService->store($validatedData)
+            )
         );
     }
 
-    public function show(Post $post, Request $request,PostViewService $postViewService)
+    public function show(Post $post, Request $request, PostViewService $postViewService)
     {
         $data = [
             'ip_address' => $request->ip(),
@@ -55,26 +54,24 @@ class PostController
         );
     }
 
-    public function dailyAnalytics(Post $post,PostDailyAnalyticsRequest $request,PostService $postService)
+    public function dailyAnalytics(Post $post, PostDailyAnalyticsRequest $request, PostService $postService)
     {
         return response()->json(
-            $postService->giveDailyAnalyticsForPost($post,$request->validated())
+            $postService->giveDailyAnalyticsForPost($post, $request->validated())
         );
     }
 
-    public function AnalyticsSummary(Post $post,PostService $postService)
+    public function AnalyticsSummary(Post $post, PostService $postService)
     {
         return response()->json(
-            $postService->giveDailyAnalyticsForPost($post)
+            $postService->giveSummaryAnalytics($post)
         );
     }
 
-    public function topViewed(TopViewPostRequest $request,PostService $postService)
+    public function topViewed(TopViewPostRequest $request, PostService $postService)
     {
-        return response()->json(
-            PostTopViewResource::collection(
-                $postService->getTopViewPosts($request->validated())
-            )
-        );
+        return PostTopViewResource::collection(
+            $postService->getTopViewPosts($request->validated())
+        )->additional(['meta' => $postService->getTopViewPostsMetaData()]);
     }
 }

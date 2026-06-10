@@ -4,10 +4,7 @@ namespace Database\Factories;
 
 use App\Models\Post;
 use App\Models\User;
-use App\Services\PostService;
 use Illuminate\Database\Eloquent\Factories\Factory;
-use Illuminate\Http\UploadedFile;
-use Illuminate\Support\Carbon;
 
 class PostFactory extends Factory
 {
@@ -15,14 +12,11 @@ class PostFactory extends Factory
 
     public function definition(): array
     {
-        $file = UploadedFile::fake();
-        $data = [
-            'title' => $this->faker->word(),
-            'content' => $this->faker->word(),
-            'user_id' => 5,
-            'file' => $file
+        return [
+            'user_id' => User::factory(),
+            'title' => fake()->sentence(),
+            'content' => fake()->paragraphs(3, true),
+            'image' => fake()->imageUrl(),
         ];
-
-        return app(PostService::class)->store($data);
     }
 }

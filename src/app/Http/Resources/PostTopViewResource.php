@@ -18,7 +18,6 @@ class PostTopViewResource extends JsonResource
             'author' => $this->author->name,
             'total_views' => $this->total_views,
             'unique_users' => $this->unique_users,
-            'trend' => 'upward',
             'created_at' => $this->created_at->toDateTimeString(),
         ];
     }
