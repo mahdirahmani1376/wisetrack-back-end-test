@@ -12,4 +12,5 @@ docker exec -it wt-php composer install
 docker exec -it wt-php php artisan migrate --force --seed
 docker exec -it wt-php php artisan key:generate --env testing
 docker exec -it wt-php php artisan test
+docker exec -it wt-php php artisan storage:link
 ```
