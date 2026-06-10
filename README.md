@@ -9,7 +9,7 @@ cp ./src/.env.example ./src/.env
 cp ./src/.env.testing.example ./src/.env.testing
 docker compose up -d --build
 docker exec -it wt-php composer install
-docker exec -it wt-php php artisan migrate --seed
+docker exec -it wt-php php artisan migrate --force --seed
 docker exec -it wt-php php artisan key:generate --env testing
 docker exec -it wt-php php artisan test
 ```
