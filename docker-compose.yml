@@ -1,0 +1,64 @@
+services:
+  php:
+    user: "${UID:-1000}:${GID:-1000}"
+    build:
+      context: .
+      dockerfile: ./Dockerfile
+    volumes:
+      - ./src:/var/www/html
+    networks:
+      - app-network
+    container_name: wt-php
+
+  nginx:
+    image: nginx:latest
+    ports:
+      - "80:80"
+    volumes:
+      - ./src:/var/www/html
+      - ./infra/nginx/default.conf:/etc/nginx/conf.d/default.conf
+    depends_on:
+      - php
+    networks:
+      - app-network
+    container_name: wt-nginx
+    restart: unless-stopped
+
+
+  mysql:
+    image: mysql:8.0
+    environment:
+      MYSQL_ROOT_PASSWORD: 123
+    ports:
+      - "3306:3306"
+    volumes:
+      - ./mysql:/var/lib/mysql
+    networks:
+      - app-network
+    container_name: wt-mysql
+    restart: unless-stopped
+
+  redis:
+    image: redis:latest
+    ports:
+      - "6379"
+    volumes:
+      - ./redis:/data
+    networks:
+      - app-network
+    container_name: wt-redis
+    restart: unless-stopped
+    command: redis-server --save "" --appendonly no
+    healthcheck:
+      test: [ "CMD", "redis-cli", "ping" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  mysql:
+  redis:
+
+networks:
+  app-network:
+    driver: bridge
