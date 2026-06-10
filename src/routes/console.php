@@ -1,16 +1,21 @@
 <?php
 
 use App\Services\PostService;
-use Illuminate\Foundation\Inspiring;
-use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\DB;
 
 Artisan::command('inspire', function (PostService $postService) {
     $post = \App\Models\Post::find(15);
 
+    $result = app(\App\Services\PostViewService::class)->create([
+        'ip_address' => fake()->ipv4(),
+        'user_agent' => fake()->userAgent(),
+        'user_id' => 2,
+        'post_id' => 1,
+        'viewed_at' => "2026-05-11 09:16:19"
+    ]);
 //    $result = $postService->giveDailyAnalyticsForPost($post);
-    $result = $postService->getTopViewPosts();
+//    $result = $postService->getTopViewPosts();
 //    $result =             $postService->giveDailyAnalyticsForPost($post,[
 //            'from' => now()->subWeek()->toDateString(),
 //            'to' => now()->addWeek()->toDateString(),
