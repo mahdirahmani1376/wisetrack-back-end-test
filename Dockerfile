@@ -13,7 +13,7 @@ COPY --from=composer:2.6 /usr/bin/composer /usr/bin/composer
 
 EXPOSE 9000
 
-COPY docker/entrypoint.sh /entrypoint.sh
+COPY ./entrypoint.sh /entrypoint.sh
 RUN chmod +x /entrypoint.sh
 
 CMD ["/entrypoint.sh"]
