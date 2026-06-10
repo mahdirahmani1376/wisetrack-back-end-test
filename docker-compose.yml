@@ -8,6 +8,9 @@ services:
     networks:
       - app-network
     container_name: wt-php
+    depends_on:
+      mysql:
+        condition: service_healthy
 
   nginx:
     image: nginx:latest
@@ -36,6 +39,11 @@ services:
       - app-network
     container_name: wt-mysql
     restart: unless-stopped
+    healthcheck:
+      test: [ "CMD", "mysqladmin", "ping", "-h", "localhost" ]
+      interval: 5s
+      timeout: 5s
+      retries: 10
 
   redis:
     image: redis:latest
