@@ -51,7 +51,7 @@ class DatabaseSeeder extends Seeder
 
         $period = CarbonPeriod::create($from, $to);
 
-        dump('seeding started');
+        dump('seeding started wait for apx: 10-20 seconds');
 
         foreach ($period as $range) {
             foreach ($posts as $post) {
