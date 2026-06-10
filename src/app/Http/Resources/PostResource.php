@@ -5,6 +5,7 @@ namespace App\Http\Resources;
 use App\Models\Post;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
+use Illuminate\Support\Facades\Storage;
 
 /** @mixin Post */
 class PostResource extends JsonResource
@@ -15,7 +16,7 @@ class PostResource extends JsonResource
             'id' => $this->id,
             'author' => UserResource::make($this->whenLoaded('author')),
             'title' => $this->title,
-            'image' => $this->image,
+            'image' => Storage::disk('public')->url($this->image),
             'content' => $this->content,
             'created_at' => $this->created_at,
             'updated_at' => $this->updated_at,

@@ -181,17 +181,16 @@ class PostService
         if (!empty($data['image_file'])) {
             /** @var UploadedFile $imageFile */
             $imageFile = $data['image_file'];
-            $path = storage_path("app/public/uploads/posts-images/{$post->id}");
 
-            $storageResult = Storage::putFileAs(
-                $path,
+            $storageResult = Storage::disk('public')->putFileAs(
+                "/uploads/posts-images/{$post->id}",
                 $imageFile,
                 $imageFile->getFilename()
             );
 
             if ($storageResult) {
                 $post->update([
-                    'image' => $path
+                    'image' => $storageResult
                 ]);
             }
         }
