@@ -15,7 +15,7 @@ Route::controller(PostController::class)->prefix('/posts')->group(function () {
     Route::get('/','index')->name('posts.index');
     Route::post('/','store')->name('posts.store')->middleware('auth:sanctum');
     Route::get('/top-viewed','topViewed')->name('posts.top-viewed');
-    Route::get('/{post}','show')->name('posts.show')->middleware('auth:sanctum');
+    Route::get('/{post}', 'show')->name('posts.show');
     Route::get('/{post}/analytics/daily','dailyAnalytics')->name('posts.analytics.daily');
     Route::get('/{post}/analytics/summary','AnalyticsSummary')->name('posts.analytics.summary');
 });
