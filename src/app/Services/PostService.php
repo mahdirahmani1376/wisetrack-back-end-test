@@ -24,12 +24,9 @@ class PostService
 
     public function giveDailyAnalyticsForPost(Post $post, array $filters = []): array
     {
-        $responseData = [];
         $from = data_get($filters, 'from');
         $to = data_get($filters, 'to');
-
-        $responseData['data']['post_id'] = $post->id;
-        $responseData['data']['title'] = $post->title;
+        $totalDays = (int)floor(Carbon::parse($from)->startOfDay()->diffInDays(Carbon::parse($to)->endOfDay()));
 
         $analytics = DB::table('post_views')
             ->selectRaw('
@@ -47,16 +44,10 @@ class PostService
                 $q->where('created_at', '<', $to);
             })
             ->groupBy(DB::raw('Date(viewed_at)'))
-            ->orderBy(DB::raw('Date(viewed_at)'))
+            ->orderByDesc(DB::raw('Date(viewed_at)'))
             ->get();
 
 
-        $responseData['data']['period'] = [
-            'from' => $from,
-            'to' => $to
-        ];
-
-        $totalDays = (int)floor(Carbon::parse($from)->startOfDay()->diffInDays(Carbon::parse($to)->endOfDay()));
         $totalViews = $analytics->sum('total_views');
 
         $totalUniqueUsers = PostView::query()
@@ -76,9 +67,7 @@ class PostService
         $peakDay = $analytics->sortByDesc('unique_users')->first()?->date;
         $peakUsers = $analytics->sortByDesc('unique_users')->first()?->unique_users;
 
-        $firstDayViews = $analytics->sortBy(function ($item) {
-            return strtotime($item->date);
-        })?->first()?->total_views;
+        $firstDayViews = $analytics->last()->total_views;
 
         $trend = $averageDailyViews > $firstDayViews ? 'uptrend' : 'downtrend';
         if (!$firstDayViews) {
@@ -87,28 +76,31 @@ class PostService
             $trendPercentage = (($averageDailyViews - $firstDayViews) / $firstDayViews) * 100;
         }
 
-        $responseData['data']['analytics'] = $analytics;
-        $responseData['meta'] = [
-            "total_days" => $totalDays,
-            "total_unique_users" => $totalUniqueUsers,
-            "total_views" => $totalViews,
-            "average_daily_users" => $averageDailyUsers,
-            "peak_day" => $peakDay,
-            "peak_users" => $peakUsers,
-            "trend" => $trend,
-            "trend_percentage" => $trendPercentage
+        return [
+            'data' => [
+                'post_id' => $post->id,
+                'title' => $post->title,
+                'analytics' => $analytics,
+                'period' => [
+                    'from' => $from,
+                    'ro' => $to,
+                ]
+            ],
+            'meta' => [
+                "total_days" => $totalDays,
+                "total_unique_users" => $totalUniqueUsers,
+                "total_views" => $totalViews,
+                "average_daily_users" => $averageDailyUsers,
+                "peak_day" => $peakDay,
+                "peak_users" => $peakUsers,
+                "trend" => $trend,
+                "trend_percentage" => $trendPercentage
+            ]
         ];
-
-        return $responseData;
     }
 
     public function giveSummaryAnalytics(Post $post): array
     {
-        $responseData = [];
-
-        $responseData['data']['post_id'] = $post->id;
-        $responseData['data']['title'] = $post->title;
-
         $analytics = DB::table('post_views')
             ->selectRaw('
                 DATE(viewed_at) as date,
@@ -148,19 +140,23 @@ class PostService
             $trendPercentage = (($averageDailyViews - $firstDayViews) / $firstDayViews) * 100;
         }
 
-        $responseData['data']['analytics'] = $analytics;
-        $responseData['data']['meta'] = [
-            "total_days" => $totalDays,
-            "total_unique_users" => $totalUniqueUsers,
-            "total_views" => $totalViews,
-            "average_daily_users" => $averageDailyUsers,
-            "peak_day" => $peakDay,
-            "peak_users" => $peakUsers,
-            "trend" => $trend,
-            "trend_percentage" => $trendPercentage
+        return [
+            'data' => [
+                'post_id' => $post->id,
+                'title' => $post->title,
+                'analytics' => $analytics
+            ],
+            'meta' => [
+                "total_days" => $totalDays,
+                "total_unique_users" => $totalUniqueUsers,
+                "total_views" => $totalViews,
+                "average_daily_users" => $averageDailyUsers,
+                "peak_day" => $peakDay,
+                "peak_users" => $peakUsers,
+                "trend" => $trend,
+                "trend_percentage" => $trendPercentage
+            ]
         ];
-
-        return $responseData;
     }
 
     public function getPaginatedResults()
