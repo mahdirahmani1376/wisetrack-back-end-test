@@ -230,27 +230,20 @@ class PostService
 
     public function getTopViewPostsMetaData()
     {
-        $nearestTime = PostView::query()->latest('viewed_at')->first()->viewed_at;
-        $furthestTime = PostView::query()->oldest('viewed_at')->first()->viewed_at;
-        if (!$nearestTime || !$furthestTime) {
-            $periodDays = 0;
-        } else {
-            $periodDays = (int)floor($furthestTime->diffInDays($nearestTime));
-        }
-
-        $views = PostView::query()
-            ->selectRaw('
-                post_id,
-                COUNT(*) as total_views
-            ')
-            ->groupBy('post_id')
-            ->get();
-
-
         return [
             "total_posts_analyzed" => Post::count(),
-            "period_days" => $periodDays,
-            "average_views_per_post" => (int)$views->average('total_views'),
+            "period_days" => PostView::query()
+                ->selectRaw('
+                COALESCE(DATEDIFF(MAX(viewed_at), MIN(viewed_at)), 0) as period_days')
+                ->value('period_days'),
+            "average_views_per_post" => (int)PostView::query()
+                ->selectRaw('AVG(total_views) as avg_views')
+                ->fromSub(function ($query) {
+                    $query->from('post_views')
+                        ->selectRaw('post_id, COUNT(*) as total_views')
+                        ->groupBy('post_id');
+                }, 't')
+                ->value('avg_views')
         ];
     }
 }
