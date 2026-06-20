@@ -98,8 +98,8 @@ class PostViewService
             'post_id' => $post->id
         ];
 
-        $analytics = PostView::query()->filter($filters)->analytics()->get();
-        $totalUniqueUsers = PostView::query()->uniqueUsers()->count('user_id');
+        $analytics = PostView::getAnalytics($filters);
+        $totalUniqueUsers = PostView::getCountOfUniqueUsers();
         $totalViews = $analytics->sum('total_views');
         $totalDays = count($analytics);
 

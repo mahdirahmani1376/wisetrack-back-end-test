@@ -42,11 +42,11 @@ class Post extends Model
     {
         $query
             ->when(!empty($filters['limit']), function ($q) use ($filters) {
-                $q->where('created_at', '>=', $filters['limit']);
+                $q->limit($filters['limit']);
             });
     }
 
-    public static function getTopViews(): Collection
+    public static function getTopViews(array $filters = []): Collection
     {
         $views = PostView::query()
             ->selectRaw('
@@ -57,6 +57,7 @@ class Post extends Model
             ->groupBy('post_id');
 
         return Post::query()
+            ->filter($filters)
             ->with('author:id,name')
             ->selectRaw('
                 posts.*,
