@@ -2,11 +2,9 @@
 
 namespace App\Http\Controllers;
 
-use App\Http\Requests\PostDailyAnalyticsRequest;
 use App\Http\Requests\StorePostRequest;
 use App\Http\Requests\TopViewPostRequest;
 use App\Http\Resources\PostResource;
-use App\Http\Resources\PostTopViewResource;
 use App\Models\Post;
 use App\Services\PostService;
 use App\Services\PostViewService;
@@ -55,25 +53,8 @@ class PostController
         );
     }
 
-    public function dailyAnalytics(Post $post, PostDailyAnalyticsRequest $request, PostService $postService)
-    {
-        return response()->json(
-            $postService->giveDailyAnalyticsForPost($post, $request->validated())
-        );
-    }
-
-    public function AnalyticsSummary(Post $post, PostService $postService)
-    {
-        return response()->json(
-            $postService->giveSummaryAnalytics($post)
-        );
-    }
-
     public function topViewed(TopViewPostRequest $request, PostService $postService)
     {
-        return response()->json([
-            'data' => PostTopViewResource::collection($postService->getTopViewPosts($request->validated())),
-            'meta' => $postService->getTopViewPostsMetaData()
-        ]);
+        return response()->json($postService->topViewed($request->validated()));
     }
 }

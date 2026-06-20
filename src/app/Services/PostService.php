@@ -2,163 +2,14 @@
 
 namespace App\Services;
 
+use App\Http\Resources\PostTopViewResource;
 use App\Models\Post;
 use App\Models\PostView;
-use App\Models\User;
 use Illuminate\Http\UploadedFile;
-use Illuminate\Support\Carbon;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 
 class PostService
 {
-    public static function userCanAccessPost(Post $post, User $user): bool
-    {
-        $post = Post::firstWhere([
-            'id' => $post->id,
-            'user_id' => $user->id
-        ]);
-
-        return !empty($post);
-    }
-
-    public function giveDailyAnalyticsForPost(Post $post, array $filters = []): array
-    {
-        $from = data_get($filters, 'from');
-        $to = data_get($filters, 'to');
-        $totalDays = (int)floor(Carbon::parse($from)->startOfDay()->diffInDays(Carbon::parse($to)->endOfDay()));
-
-        $analytics = DB::table('post_views')
-            ->selectRaw('
-                DATE(viewed_at) as date,
-                COUNT(*) as total_views,
-                COUNT(DISTINCT user_id) as unique_users,
-                COUNT(CASE WHEN user_id IS NOT NULL THEN 1 END) as registered_users,
-                COUNT(CASE WHEN user_id IS NULL THEN 1 END) as guest_users
-            ')
-            ->where('post_id', $post->id)
-            ->when(!empty($from), function ($q) use ($from) {
-                $q->where('created_at', '>=', $from);
-            })
-            ->when(!empty($to), function ($q) use ($to) {
-                $q->where('created_at', '<', $to);
-            })
-            ->groupBy(DB::raw('Date(viewed_at)'))
-            ->orderByDesc(DB::raw('Date(viewed_at)'))
-            ->get();
-
-
-        $totalViews = $analytics->sum('total_views');
-
-        $totalUniqueUsers = PostView::query()
-            ->where('post_id', $post->id)
-            ->when(!empty($from), function ($q) use ($from) {
-                $q->where('created_at', '>=', $from);
-            })
-            ->when(!empty($to), function ($q) use ($to) {
-                $q->where('created_at', '<', $to);
-            })
-            ->distinct('user_id')
-            ->count('user_id');
-
-
-        $averageDailyUsers = (int)round($analytics->avg('unique_users'), 0);
-        $averageDailyViews = (int)round($analytics->avg('total_views'), 0);
-        $peakDay = $analytics->sortByDesc('unique_users')->first()?->date;
-        $peakUsers = $analytics->sortByDesc('unique_users')->first()?->unique_users;
-
-        $firstDayViews = $analytics->last()->total_views;
-
-        $trend = $averageDailyViews > $firstDayViews ? 'uptrend' : 'downtrend';
-        if (!$firstDayViews) {
-            $trendPercentage = 0;
-        } else {
-            $trendPercentage = (($averageDailyViews - $firstDayViews) / $firstDayViews) * 100;
-        }
-
-        return [
-            'data' => [
-                'post_id' => $post->id,
-                'title' => $post->title,
-                'analytics' => $analytics,
-                'period' => [
-                    'from' => $from,
-                    'ro' => $to,
-                ]
-            ],
-            'meta' => [
-                "total_days" => $totalDays,
-                "total_unique_users" => $totalUniqueUsers,
-                "total_views" => $totalViews,
-                "average_daily_users" => $averageDailyUsers,
-                "peak_day" => $peakDay,
-                "peak_users" => $peakUsers,
-                "trend" => $trend,
-                "trend_percentage" => $trendPercentage
-            ]
-        ];
-    }
-
-    public function giveSummaryAnalytics(Post $post): array
-    {
-        $analytics = DB::table('post_views')
-            ->selectRaw('
-                DATE(viewed_at) as date,
-                COUNT(*) as total_views,
-                COUNT(DISTINCT user_id) as unique_users,
-                COUNT(CASE WHEN user_id IS NOT NULL THEN 1 END) as registered_users,
-                COUNT(CASE WHEN user_id IS NULL THEN 1 END) as guest_users
-            ')
-            ->where('post_id', $post->id)
-            ->groupBy(DB::raw('Date(viewed_at)'))
-            ->orderBy(DB::raw('Date(viewed_at)'))
-            ->get();
-
-
-        $totalDays = count($analytics);
-        $totalViews = $analytics->sum('total_views');
-
-        $totalUniqueUsers = PostView::query()
-            ->where('post_id', $post->id)
-            ->distinct('user_id')
-            ->count('user_id');
-
-
-        $averageDailyUsers = (int)round($analytics->avg('unique_users'), 0);
-        $averageDailyViews = (int)round($analytics->avg('total_views'), 0);
-        $peakDay = $analytics->sortByDesc('unique_users')->first()?->date;
-        $peakUsers = $analytics->sortByDesc('unique_users')->first()?->unique_users;
-
-        $firstDayViews = $analytics->sortBy(function ($item) {
-            return strtotime($item->date);
-        })?->first()?->total_views;
-
-        $trend = $averageDailyViews > $firstDayViews ? 'uptrend' : 'downtrend';
-        if (!$firstDayViews) {
-            $trendPercentage = 0;
-        } else {
-            $trendPercentage = (($averageDailyViews - $firstDayViews) / $firstDayViews) * 100;
-        }
-
-        return [
-            'data' => [
-                'post_id' => $post->id,
-                'title' => $post->title,
-                'analytics' => $analytics
-            ],
-            'meta' => [
-                "total_days" => $totalDays,
-                "total_unique_users" => $totalUniqueUsers,
-                "total_views" => $totalViews,
-                "average_daily_users" => $averageDailyUsers,
-                "peak_day" => $peakDay,
-                "peak_users" => $peakUsers,
-                "trend" => $trend,
-                "trend_percentage" => $trendPercentage
-            ]
-        ];
-    }
-
     public function getPaginatedResults()
     {
         return Post::with('author')
@@ -194,52 +45,24 @@ class PostService
         return $post;
     }
 
-    public function getTopViewPosts(array $filters = [])
+    public function topViewed(array $filters = []): array
     {
         $limit = $filters['limit'] ?? 10;
 
-        $views = PostView::query()
-            ->selectRaw('
-                post_id,
-                COUNT(*) as total_views,
-                COUNT(DISTINCT user_id) as unique_users
-            ')
-            ->groupBy('post_id');
+        $data = Post::getTopViews([
+            'limit' => $limit
+        ]);
 
-        $data = Post::query()
-            ->with('author:id,name')
-            ->selectRaw('
-                posts.*,
-                views.total_views,
-                views.unique_users,
-                RANK() OVER (ORDER BY views.total_views DESC) as view_rank
-                ')
-            ->leftJoinSub($views, 'views', function ($join) {
-                $join->on('posts.id', '=', 'views.post_id');
-            })
-            ->orderByDesc('views.total_views')
-            ->limit($limit)
-            ->get();
-
-        return $data;
-    }
-
-    public function getTopViewPostsMetaData()
-    {
-        return [
+        $meta = [
             "total_posts_analyzed" => Post::count(),
-            "period_days" => PostView::query()
-                ->selectRaw('
-                COALESCE(DATEDIFF(MAX(viewed_at), MIN(viewed_at)), 0) as period_days')
-                ->value('period_days'),
-            "average_views_per_post" => (int)PostView::query()
-                ->selectRaw('AVG(total_views) as avg_views')
-                ->fromSub(function ($query) {
-                    $query->from('post_views')
-                        ->selectRaw('post_id, COUNT(*) as total_views')
-                        ->groupBy('post_id');
-                }, 't')
-                ->value('avg_views')
+            "period_days" => PostView::getPeriodDays(),
+            "average_views_per_post" => PostView::getAverageViewsPerPost()
+        ];
+
+        return [
+            'data' => PostTopViewResource::collection($data),
+            'meta' => $meta
         ];
     }
+
 }
