@@ -12,7 +12,7 @@ class PostTopViewResource extends JsonResource
     public function toArray(Request $request): array
     {
         return [
-            'rank' => $this->when(isset($this->rank), $this->rank),
+            'rank' => $this->when(isset($this->view_rank), $this->view_rank),
             'post_id' => $this->id,
             'title' => $this->title,
             'author' => $this->author->name,

@@ -215,15 +215,15 @@ class PostService
             ->selectRaw('
                 posts.*,
                 views.total_views,
-                views.unique_users
+                views.unique_users,
+                RANK() OVER (ORDER BY views.total_views DESC) as view_rank
                 ')
             ->leftJoinSub($views, 'views', function ($join) {
                 $join->on('posts.id', '=', 'views.post_id');
             })
             ->orderByDesc('views.total_views')
             ->limit($limit)
-            ->get()
-            ->each(fn(Post $post, int $key) => $post->setAttribute('rank',$key +1));
+            ->get();
 
         return $data;
     }

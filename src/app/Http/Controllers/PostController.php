@@ -71,8 +71,9 @@ class PostController
 
     public function topViewed(TopViewPostRequest $request, PostService $postService)
     {
-        return PostTopViewResource::collection(
-            $postService->getTopViewPosts($request->validated())
-        )->additional(['meta' => $postService->getTopViewPostsMetaData()]);
+        return response()->json([
+            'data' => PostTopViewResource::collection($postService->getTopViewPosts($request->validated())),
+            'meta' => $postService->getTopViewPostsMetaData()
+        ]);
     }
 }
